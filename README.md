@@ -1,3 +1,3 @@
 # WonderStay
 AI Recommended resort booking platform
-<h1>SE Project</h1>
+<h1>TE Project</h1>
