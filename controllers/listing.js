@@ -6,8 +6,59 @@ const geocodingClient = mbxGeocoding({ accessToken: mapToken });
 
 
 
+// Helper function to get current season based on date
+function getCurrentSeason() {
+    const now = new Date();
+    const month = now.getMonth() + 1; // getMonth() returns 0-11, so add 1
+    
+    // Northern Hemisphere seasons
+    if (month >= 3 && month <= 5) {
+        return 'spring'; // March, April, May
+    } else if (month >= 6 && month <= 8) {
+        return 'summer'; // June, July, August
+    } else if (month >= 9 && month <= 11) {
+        return 'autumn'; // September, October, November
+    } else {
+        return 'winter'; // December, January, February
+    }
+}
+
+// Helper function to get category priority based on season
+function getCategoryPriority(category, season) {
+    const seasonCategoryMap = {
+        'spring': ['Mountain', 'Hill Station', 'BeachFront', 'Treehouse', 'Island', 'Desert', 'Others'],
+        'summer': ['BeachFront', 'Island', 'Mountain', 'Hill Station', 'Treehouse', 'Desert', 'Others'],
+        'autumn': ['Mountain', 'Hill Station', 'Treehouse', 'BeachFront', 'Island', 'Desert', 'Others'],
+        'winter': ['Desert', 'BeachFront', 'Island', 'Mountain', 'Hill Station', 'Treehouse', 'Others']
+    };
+    
+    const priorityList = seasonCategoryMap[season] || seasonCategoryMap['spring'];
+    const index = priorityList.indexOf(category);
+    return index !== -1 ? index : 999; // If category not found, put it last
+}
+
 module.exports.index = async (req, res) => {
     const allListings = await Listing.find({});
+    
+    // Get current date and determine season
+    const currentSeason = getCurrentSeason();
+    
+    // Increment views for each listing and calculate display price
+    for (let listing of allListings) {
+        listing.views = (listing.views || 0) + 1;
+        await listing.save();
+        
+        // Calculate display price: actual_price + (actual_price * 0.001 * views)
+        listing.displayPrice = listing.price + (listing.price * 0.001 * listing.views);
+    }
+    
+    // Sort listings by category priority based on current season
+    allListings.sort((a, b) => {
+        const priorityA = getCategoryPriority(a.category || 'Others', currentSeason);
+        const priorityB = getCategoryPriority(b.category || 'Others', currentSeason);
+        return priorityA - priorityB;
+    });
+    
     res.render("listings/index.ejs", { allListings });
 }
 
@@ -44,6 +95,14 @@ module.exports.showListing = async (req, res, next) => {
         res.redirect("/listings");
         //  next(new ExpressError(404, 'Data not found'))
     }
+    
+    // Increment views for this listing
+    details.views = (details.views || 0) + 1;
+    await details.save();
+    
+    // Calculate display price: actual_price + (actual_price * 0.001 * views)
+    details.displayPrice = details.price + (details.price * 0.001 * details.views);
+    
     res.render("listings/show.ejs", { details });
 }
 
@@ -92,4 +151,3 @@ module.exports.delete = async (req, res, next) => {
     req.flash('success', 'listing deleted successfully !')
     res.redirect("/listings")
 }
-

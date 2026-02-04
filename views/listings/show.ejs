@@ -22,7 +22,7 @@
             <p>
                 <%= details.description %>
             </p>
-            <p>&#8377;<%= details.price.toLocaleString('en-In') %>
+            <p>&#8377;<%= (details.displayPrice || details.price).toLocaleString('en-In') %>
             </p>
             <p>
                 <%= details.location %>

@@ -15,7 +15,7 @@
                             <p class="font-bold text-md">
                                 <%= list.title %>
                             </p>
-                            <p class="m-2">&#8377;<%= list.price.toLocaleString('en-In') %>/night</p>
+                            <p class="m-2">&#8377;<%= (list.displayPrice || list.price).toLocaleString('en-In') %>/night</p>
                         </div>
                     </div>
                 </a>
